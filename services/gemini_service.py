@@ -116,7 +116,7 @@ def analyze(resume_text: str, jd_text: str) -> dict:
         resume=resume_text[:8000],
         jd=jd_text[:4000],
     )
-    return _call_gemini(prompt, max_tokens=2048)
+    return _call_gemini(prompt, max_tokens=8192)
 
 
 def analyze_compare(resume_text: str, jd_text: str) -> dict:
@@ -146,11 +146,6 @@ def _call_gemini(prompt: str, max_tokens: int = 8192) -> dict:
         )
 
         raw = response.text
-
-        print("\n===== GEMINI RAW RESPONSE =====")
-        print(raw)
-        print("===== END RESPONSE =====\n")
-
         logger.debug("Gemini raw response length: %d", len(raw))
 
         return _parse_response(raw)
