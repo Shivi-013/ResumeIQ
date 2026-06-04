@@ -161,65 +161,44 @@ def _call_gemini(prompt: str, max_tokens: int = 8192) -> dict:
 
 def _parse_response(raw: str) -> dict:
     """
-    Robustly extract and validate JSON from Gemini's response.
-    Handles: thinking tags, markdown fences, leading/trailing text,
-    truncated JSON (recovers the partial object).
+    Robustly extract JSON from any Gemini response format.
+    Handles: thinking tags, markdown fences, preamble text, truncated JSON.
     """
     if not raw:
         raise ValueError("Empty response from Gemini.")
 
-    # 1. Strip thinking tokens (gemini-2.5 thinking variant)
+    # Strip thinking tokens (gemini-2.5 thinking variant)
     text = re.sub(r"<thinking>.*?</thinking>", "", raw, flags=re.DOTALL)
 
-    # 2. Strip markdown fences
-    text = re.sub(r"```(?:json)?\s*", "", text)
-    text = re.sub(r"```\s*", "", text).strip()
+    # Strip ALL backtick fences character-by-character safe approach
+    text = re.sub(r"```json", "", text, flags=re.IGNORECASE)
+    text = re.sub(r"```", "", text).strip()
 
-    # 3. Try direct parse (cleanest path)
-    try:
-        data = json.loads(text)
+    # Use bracket-counting extractor — handles nested braces in strings
+    data = _extract_json_object(text)
+    if data is not None:
         return _validate(data)
-    except json.JSONDecodeError:
-        pass
 
-    # 4. Extract from surrounding text using the outermost { }
-    match = re.search(r"\{.*\}", text, re.DOTALL)
-    if match:
-        try:
-            data = json.loads(match.group())
-            return _validate(data)
-        except json.JSONDecodeError:
-            pass
-
-    # 5. Attempt truncation recovery — close any open brackets and retry
-    recovered = _recover_truncated_json(text)
-    if recovered:
-        try:
-            data = json.loads(recovered)
-            return _validate(data)
-        except json.JSONDecodeError:
-            pass
-
-    # 6. Log what we actually got so we can diagnose in Render logs
     logger.warning("Could not parse Gemini response. First 500 chars: %s", raw[:500])
     raise ValueError("No valid JSON object found in Gemini response.")
 
 
-def _recover_truncated_json(text: str) -> str | None:
+def _extract_json_object(text: str) -> dict | None:
     """
-    Try to close a truncated JSON string by counting open brackets/braces
-    and appending the missing closers.
+    Find the first complete JSON object in `text` by counting { } depth,
+    correctly skipping braces inside quoted strings.
+    Falls back to truncation recovery if JSON is cut off.
     """
     start = text.find("{")
     if start == -1:
         return None
 
-    fragment = text[start:]
-    stack = []
+    depth = 0
     in_string = False
     escape_next = False
 
-    for ch in fragment:
+    for idx in range(start, len(text)):
+        ch = text[idx]
         if escape_next:
             escape_next = False
             continue
@@ -231,18 +210,44 @@ def _recover_truncated_json(text: str) -> str | None:
             continue
         if in_string:
             continue
+        if ch == "{":
+            depth += 1
+        elif ch == "}":
+            depth -= 1
+            if depth == 0:
+                # Found a complete object — try to parse it
+                try:
+                    return json.loads(text[start: idx + 1])
+                except json.JSONDecodeError:
+                    # Malformed; try the next { if any
+                    rest = text[idx + 1:]
+                    if "{" in rest:
+                        return _extract_json_object(rest)
+                    return None
+
+    # depth > 0 means JSON was truncated — try to close it
+    fragment = text[start:]
+    stack, in_s, esc = [], False, False
+    for ch in fragment:
+        if esc:
+            esc = False; continue
+        if ch == "\\" and in_s:
+            esc = True; continue
+        if ch == '"':
+            in_s = not in_s; continue
+        if in_s:
+            continue
         if ch in "{[":
             stack.append("}" if ch == "{" else "]")
-        elif ch in "}]":
-            if stack and stack[-1] == ch:
-                stack.pop()
-
-    if not stack:
-        return None  # Already valid — parser should have caught it
-
-    # Close any open string first, then close the brackets
-    suffix = ('"' if in_string else "") + "".join(reversed(stack))
-    return fragment + suffix
+        elif ch in "}]" and stack:
+            stack.pop()
+    if stack:
+        suffix = ('"' if in_s else "") + "".join(reversed(stack))
+        try:
+            return json.loads(fragment + suffix)
+        except json.JSONDecodeError:
+            pass
+    return None
 
 
 def _validate(data: dict) -> dict:
