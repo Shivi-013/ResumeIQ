@@ -116,7 +116,7 @@ def analyze(resume_text: str, jd_text: str) -> dict:
         resume=resume_text[:8000],
         jd=jd_text[:4000],
     )
-    return _call_gemini(prompt, max_tokens=1024)
+    return _call_gemini(prompt, max_tokens=2048)
 
 
 def analyze_compare(resume_text: str, jd_text: str) -> dict:
@@ -136,6 +136,7 @@ def analyze_compare(resume_text: str, jd_text: str) -> dict:
 def _call_gemini(prompt: str, max_tokens: int = 8192) -> dict:
     try:
         model = genai.GenerativeModel("gemini-3.5-flash")
+
         response = model.generate_content(
             prompt,
             generation_config=genai.types.GenerationConfig(
@@ -143,13 +144,20 @@ def _call_gemini(prompt: str, max_tokens: int = 8192) -> dict:
                 max_output_tokens=max_tokens,
             ),
         )
+
         raw = response.text
+
+        print("\n===== GEMINI RAW RESPONSE =====")
+        print(raw)
+        print("===== END RESPONSE =====\n")
+
         logger.debug("Gemini raw response length: %d", len(raw))
+
         return _parse_response(raw)
+
     except Exception as exc:
         logger.error("Gemini API error: %s", exc)
         raise RuntimeError(f"Gemini API call failed: {exc}") from exc
-
 
 def _parse_response(raw: str) -> dict:
     """Extract and validate JSON from Gemini's response."""
