@@ -10,7 +10,7 @@
 
 **Upload your resume. Paste a job description. Get an AI-powered match report in seconds.**
 
-[Live Demo](#deployment) · [Features](#features) · [Quick Start](#quick-start) · [API Reference](#environment-variables)
+[Live Demo](https://resumeiq-h5rj.onrender.com) · [Features](#features) · [Quick Start](#quick-start) · [API Reference](#environment-variables)
 
 </div>
 
