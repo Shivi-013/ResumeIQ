@@ -116,7 +116,7 @@ def analyze(resume_text: str, jd_text: str) -> dict:
         resume=resume_text[:8000],
         jd=jd_text[:4000],
     )
-    return _call_gemini(prompt, max_tokens=8192)
+    return _call_gemini(prompt, max_tokens=1024)
 
 
 def analyze_compare(resume_text: str, jd_text: str) -> dict:
