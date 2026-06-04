@@ -106,7 +106,6 @@ def analyze_for_company(
             generation_config=genai.types.GenerationConfig(
                 temperature=0.3,
                 max_output_tokens=2048,
-                response_mime_type="application/json",
             ),
         )
         data = _parse_response(response.text)

@@ -8,9 +8,10 @@ logger = logging.getLogger(__name__)
 
 _PROMPT_TEMPLATE = """You are an expert ATS analyst, career coach, and technical interviewer.
 
-IMPORTANT CONTEXT: This may be a student or early-career resume. If the candidate has no formal work experience, treat strong academic projects, hackathons, internships, open-source contributions, or freelance work as valid experience. Score and comment accordingly — do NOT penalise a student for lacking full-time experience if their projects demonstrate the required skills.
+IMPORTANT: If the candidate is a student or early-career, treat projects, internships, hackathons, and open-source contributions as valid experience. Do NOT penalise missing full-time work if projects demonstrate the required skills.
 
-Analyze the resume below against the job description and return a valid JSON object.
+Analyze the resume below against the job description.
+Return ONLY a raw JSON object. No markdown, no code fences, no explanation, no text before or after the JSON.
 
 RESUME:
 {resume}
@@ -18,92 +19,98 @@ RESUME:
 JOB DESCRIPTION:
 {jd}
 
-Return this exact JSON structure (fill in all values — keep arrays concise, max 6 items each unless noted):
+JSON structure to return:
 {{
-  "overall_score": <integer 0-100>,
-  "ats_score": <integer 0-100>,
-  "skills_score": <integer 0-100>,
-  "experience_score": <integer 0-100, treat projects/internships as experience for students>,
-  "education_score": <integer 0-100>,
-  "required_skills": [<skills required by JD, max 20>],
-  "found_skills": [<subset of required_skills present in resume>],
-  "missing_skills": [<subset of required_skills absent from resume>],
+  "overall_score": 0,
+  "ats_score": 0,
+  "skills_score": 0,
+  "experience_score": 0,
+  "education_score": 0,
+  "required_skills": [],
+  "found_skills": [],
+  "missing_skills": [],
   "sections": {{
-    "skills":     {{"score": <0-100>, "feedback": "<1-2 sentence honest assessment, mention projects if no formal experience>"}},
-    "experience": {{"score": <0-100>, "feedback": "<1-2 sentence honest assessment, acknowledge projects/internships if no full-time work>"}},
-    "education":  {{"score": <0-100>, "feedback": "<1-2 sentence assessment>"}},
-    "projects":   {{"score": <0-100>, "feedback": "<1-2 sentence assessment, highlight if projects substitute for experience>"}}
+    "skills":     {{"score": 0, "feedback": ""}},
+    "experience": {{"score": 0, "feedback": "credit projects/internships if student"}},
+    "education":  {{"score": 0, "feedback": ""}},
+    "projects":   {{"score": 0, "feedback": ""}}
   }},
-  "strengths":               [<4 specific strengths of this resume vs JD>],
-  "weaknesses":              [<4 specific gaps or weaknesses>],
-  "improvements":            [<5 concrete actionable improvement suggestions>],
-  "missing_keywords":        [<important ATS keywords absent from resume, max 10>],
-  "action_verb_suggestions": [<5 stronger action verbs to replace weak ones detected>],
-  "formatting_tips":         [<3 formatting/structure improvements>],
-  "ats_tips":                [<3 ATS optimization tips specific to this resume>],
-  "recommendation":          "<exactly one of: Strong Match | Moderate Match | Weak Match>",
-  "recommendation_reason":   "<2-3 sentence summary — if student, acknowledge project strength compensating for lack of experience>",
-
+  "strengths": [],
+  "weaknesses": [],
+  "improvements": [],
+  "missing_keywords": [],
+  "action_verb_suggestions": [],
+  "formatting_tips": [],
+  "ats_tips": [],
+  "recommendation": "Strong Match",
+  "recommendation_reason": "",
   "section_audit": {{
-    "skills":     {{"keep": [<1-2 things to keep>], "remove": [<1 thing to remove or 'Nothing to remove'>], "add": [<2 things to add>], "improve": [<1 thing to improve>]}},
-    "experience": {{"keep": [<1-2 things to keep>], "remove": [<1 thing to remove or 'Nothing to remove'>], "add": [<2 things to add>], "improve": [<1 thing to improve>]}},
-    "education":  {{"keep": [<1-2 things to keep>], "remove": [<1 thing to remove or 'Nothing to remove'>], "add": [<2 things to add>], "improve": [<1 thing to improve>]}},
-    "projects":   {{"keep": [<1-2 things to keep>], "remove": [<1 thing to remove or 'Nothing to remove'>], "add": [<2 things to add>], "improve": [<1 thing to improve>]}}
+    "skills":     {{"keep": [], "remove": [], "add": [], "improve": []}},
+    "experience": {{"keep": [], "remove": [], "add": [], "improve": []}},
+    "education":  {{"keep": [], "remove": [], "add": [], "improve": []}},
+    "projects":   {{"keep": [], "remove": [], "add": [], "improve": []}}
   }},
-
   "bullet_rewrites": [
-    {{"original": "<an actual weak bullet from the resume>", "improved": "<rewritten with strong action verb + quantified impact>"}},
-    {{"original": "<another weak bullet>", "improved": "<rewritten>"}},
-    {{"original": "<another weak bullet>", "improved": "<rewritten>"}},
-    {{"original": "<another weak bullet>", "improved": "<rewritten>"}},
-    {{"original": "<another weak bullet>", "improved": "<rewritten>"}}
+    {{"original": "", "improved": ""}},
+    {{"original": "", "improved": ""}},
+    {{"original": "", "improved": ""}},
+    {{"original": "", "improved": ""}},
+    {{"original": "", "improved": ""}}
   ],
-
   "interview_questions": {{
-    "technical":     [<3 technical questions based on skills in JD>],
-    "behavioral":    [<3 behavioral questions based on role requirements>],
-    "project_based": [<2 questions about specific projects in resume>],
-    "scenario_based":[<2 situational questions relevant to the role>]
+    "technical": [],
+    "behavioral": [],
+    "project_based": [],
+    "scenario_based": []
   }},
-
   "learning_roadmap": [
-    {{"week": 1, "topic": "<first missing skill>",    "description": "<what to learn and why>", "skill_category": "<Technical|Soft|Tool>"}},
-    {{"week": 2, "topic": "<second topic>",           "description": "<what to learn and why>", "skill_category": "<category>"}},
-    {{"week": 3, "topic": "<third topic>",            "description": "<what to learn and why>", "skill_category": "<category>"}},
-    {{"week": 4, "topic": "<fourth topic>",           "description": "<what to learn and why>", "skill_category": "<category>"}},
-    {{"week": 5, "topic": "<fifth topic or review>",  "description": "<what to learn and why>", "skill_category": "<category>"}},
-    {{"week": 6, "topic": "<sixth topic or project>", "description": "<what to learn and why>", "skill_category": "<category>"}}
+    {{"week": 1, "topic": "", "description": "", "skill_category": "Technical"}},
+    {{"week": 2, "topic": "", "description": "", "skill_category": "Technical"}},
+    {{"week": 3, "topic": "", "description": "", "skill_category": "Technical"}},
+    {{"week": 4, "topic": "", "description": "", "skill_category": "Tool"}},
+    {{"week": 5, "topic": "", "description": "", "skill_category": "Tool"}},
+    {{"week": 6, "topic": "", "description": "", "skill_category": "Soft"}}
   ]
 }}
+
+Rules:
+- All scores are integers 0-100.
+- required_skills: max 20 items.
+- missing_keywords: max 10 items.
+- strengths, weaknesses, improvements: 4-5 items each.
+- action_verb_suggestions, formatting_tips, ats_tips: 3-5 items each.
+- Each interview_questions list: 2-3 items.
+- learning_roadmap: 6 weeks based on the missing skills.
+- bullet_rewrites: use actual weak bullets from the resume. Keep strings short — avoid unescaped quotes inside strings.
+- recommendation must be exactly one of: Strong Match | Moderate Match | Weak Match
 """
 
-# Lighter prompt for resume comparison mode
-_COMPARE_PROMPT = """You are an ATS analyst. If the candidate is a student, treat projects and internships as valid experience.
-Analyze this resume vs the job description and return a valid JSON object.
+_COMPARE_PROMPT = """You are an ATS analyst. Treat projects and internships as valid experience for students.
+Analyze this resume vs the job description. Return ONLY a raw JSON object, no markdown, no extra text.
 
 RESUME: {resume}
 JOB DESCRIPTION: {jd}
 
 Return:
 {{
-  "overall_score": <0-100>,
-  "ats_score": <0-100>,
-  "skills_score": <0-100>,
-  "experience_score": <0-100>,
-  "education_score": <0-100>,
-  "required_skills": [<max 15 skills from JD>],
-  "found_skills": [<skills present in resume>],
-  "missing_skills": [<skills absent from resume>],
+  "overall_score": 0,
+  "ats_score": 0,
+  "skills_score": 0,
+  "experience_score": 0,
+  "education_score": 0,
+  "required_skills": [],
+  "found_skills": [],
+  "missing_skills": [],
   "sections": {{
-    "skills":     {{"score": <0-100>, "feedback": "<brief>"}},
-    "experience": {{"score": <0-100>, "feedback": "<brief, credit projects if student>"}},
-    "education":  {{"score": <0-100>, "feedback": "<brief>"}},
-    "projects":   {{"score": <0-100>, "feedback": "<brief>"}}
+    "skills":     {{"score": 0, "feedback": ""}},
+    "experience": {{"score": 0, "feedback": ""}},
+    "education":  {{"score": 0, "feedback": ""}},
+    "projects":   {{"score": 0, "feedback": ""}}
   }},
-  "strengths":   [<3 strengths>],
-  "weaknesses":  [<3 weaknesses>],
-  "recommendation": "<Strong Match|Moderate Match|Weak Match>",
-  "recommendation_reason": "<1 sentence>"
+  "strengths": [],
+  "weaknesses": [],
+  "recommendation": "Moderate Match",
+  "recommendation_reason": ""
 }}
 """
 
@@ -142,11 +149,10 @@ def _call_gemini(prompt: str, max_tokens: int = 8192) -> dict:
             generation_config=genai.types.GenerationConfig(
                 temperature=0.2,
                 max_output_tokens=max_tokens,
-                response_mime_type="application/json",
             ),
         )
         raw = response.text
-        logger.debug("Gemini raw response length: %d", len(raw))
+        logger.info("Gemini response length: %d chars", len(raw))
         return _parse_response(raw)
     except Exception as exc:
         logger.error("Gemini API error: %s", exc)
@@ -154,29 +160,97 @@ def _call_gemini(prompt: str, max_tokens: int = 8192) -> dict:
 
 
 def _parse_response(raw: str) -> dict:
-    """Extract and validate JSON from Gemini's response."""
-    # Strip thinking tokens (gemini-2.5 with thinking enabled)
-    raw = re.sub(r"<thinking>.*?</thinking>", "", raw, flags=re.DOTALL)
-    # Strip markdown fences
-    cleaned = re.sub(r"```(?:json)?\s*", "", raw)
-    cleaned = re.sub(r"```\s*", "", cleaned).strip()
+    """
+    Robustly extract and validate JSON from Gemini's response.
+    Handles: thinking tags, markdown fences, leading/trailing text,
+    truncated JSON (recovers the partial object).
+    """
+    if not raw:
+        raise ValueError("Empty response from Gemini.")
 
-    # Try direct parse first (fastest path when response_mime_type works)
+    # 1. Strip thinking tokens (gemini-2.5 thinking variant)
+    text = re.sub(r"<thinking>.*?</thinking>", "", raw, flags=re.DOTALL)
+
+    # 2. Strip markdown fences
+    text = re.sub(r"```(?:json)?\s*", "", text)
+    text = re.sub(r"```\s*", "", text).strip()
+
+    # 3. Try direct parse (cleanest path)
     try:
-        data = json.loads(cleaned)
+        data = json.loads(text)
+        return _validate(data)
     except json.JSONDecodeError:
-        # Fall back to regex extraction
-        match = re.search(r"\{.*\}", cleaned, re.DOTALL)
-        if not match:
-            raise ValueError("No JSON object found in Gemini response.")
-        data = json.loads(match.group())
+        pass
 
-    # Clamp scores to 0-100
+    # 4. Extract from surrounding text using the outermost { }
+    match = re.search(r"\{.*\}", text, re.DOTALL)
+    if match:
+        try:
+            data = json.loads(match.group())
+            return _validate(data)
+        except json.JSONDecodeError:
+            pass
+
+    # 5. Attempt truncation recovery — close any open brackets and retry
+    recovered = _recover_truncated_json(text)
+    if recovered:
+        try:
+            data = json.loads(recovered)
+            return _validate(data)
+        except json.JSONDecodeError:
+            pass
+
+    # 6. Log what we actually got so we can diagnose in Render logs
+    logger.warning("Could not parse Gemini response. First 500 chars: %s", raw[:500])
+    raise ValueError("No valid JSON object found in Gemini response.")
+
+
+def _recover_truncated_json(text: str) -> str | None:
+    """
+    Try to close a truncated JSON string by counting open brackets/braces
+    and appending the missing closers.
+    """
+    start = text.find("{")
+    if start == -1:
+        return None
+
+    fragment = text[start:]
+    stack = []
+    in_string = False
+    escape_next = False
+
+    for ch in fragment:
+        if escape_next:
+            escape_next = False
+            continue
+        if ch == "\\" and in_string:
+            escape_next = True
+            continue
+        if ch == '"':
+            in_string = not in_string
+            continue
+        if in_string:
+            continue
+        if ch in "{[":
+            stack.append("}" if ch == "{" else "]")
+        elif ch in "}]":
+            if stack and stack[-1] == ch:
+                stack.pop()
+
+    if not stack:
+        return None  # Already valid — parser should have caught it
+
+    # Close any open string first, then close the brackets
+    suffix = ('"' if in_string else "") + "".join(reversed(stack))
+    return fragment + suffix
+
+
+def _validate(data: dict) -> dict:
+    """Clamp scores, normalise recommendation, fill V2 defaults."""
     for key in ("overall_score", "ats_score", "skills_score",
                 "experience_score", "education_score"):
         data[key] = max(0, min(100, int(data.get(key, 0))))
 
-    # Normalise recommendation
     rec = str(data.get("recommendation", "")).strip()
     if "strong" in rec.lower():
         data["recommendation"] = "Strong Match"
@@ -185,12 +259,10 @@ def _parse_response(raw: str) -> dict:
     else:
         data["recommendation"] = "Weak Match"
 
-    # V2 key defaults
     data.setdefault("section_audit", {})
     data.setdefault("bullet_rewrites", [])
     data.setdefault("interview_questions", {
         "technical": [], "behavioral": [], "project_based": [], "scenario_based": []
     })
     data.setdefault("learning_roadmap", [])
-
     return data
