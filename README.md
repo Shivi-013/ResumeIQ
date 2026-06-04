@@ -231,50 +231,6 @@ The V2 analysis payload (interview questions, roadmap, section audit, bullet rew
 
 ---
 
-## API / Routes Reference
-
-| Method | Route | Description |
-|---|---|---|
-| `GET` | `/` | Landing page |
-| `GET` | `/analyze` | Upload form |
-| `POST` | `/analyze` | Run full analysis pipeline |
-| `GET` | `/results` | Results dashboard (reads from report file) |
-| `GET` | `/report/download` | Download PDF report |
-| `POST` | `/company-analyze` | AJAX — company-specific analysis |
-| `GET` | `/compare` | A/B comparison form |
-| `POST` | `/compare` | Run comparison, render results |
-
----
-
-## Deployment on Render
-
-### Automatic (recommended)
-
-1. Push this repo to GitHub.
-2. Go to [render.com](https://render.com) → **New** → **Web Service**.
-3. Connect your GitHub repository.
-4. Render auto-detects `render.yaml` — click **Deploy**.
-5. In **Environment** settings, add:
-
-   | Key | Value |
-   |---|---|
-   | `GEMINI_API_KEY` | your key |
-   | `SECRET_KEY` | a long random string |
-
-6. Wait for the build to complete. Your app is live.
-
-### Manual
-
-| Setting | Value |
-|---|---|
-| **Runtime** | Python 3 |
-| **Build Command** | `pip install -r requirements.txt` |
-| **Start Command** | `gunicorn app:app` |
-
-> **Ephemeral filesystem note:** The `uploads/` and `reports/` folders are wiped on each Render deploy. PDFs are deleted immediately after parsing, and report JSON files expire after 2 hours, so this is fully acceptable for the current architecture.
-
----
-
 ## Fallback Mode
 
 If `GEMINI_API_KEY` is not configured or the API call fails, ResumeIQ falls back to **local keyword-overlap scoring**. You will see a yellow warning banner on the results page. In fallback mode:
