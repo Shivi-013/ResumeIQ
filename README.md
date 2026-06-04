@@ -69,7 +69,7 @@ Landing Page  →  Analyzer  →  Results Dashboard  →  PDF Download
 | Layer | Technology |
 |---|---|
 | **Backend** | Python 3.10 · Flask 3.1 · Gunicorn |
-| **AI** | Google Gemini (gemini-3.5-flash via `google-generativeai`) |
+| **AI** | Google Gemini (gemini-2.5-flash via `google-generativeai`) |
 | **PDF Parsing** | PyPDF 5 |
 | **Semantic Similarity** | `sentence-transformers` · `all-MiniLM-L6-v2` |
 | **PDF Generation** | ReportLab 4.2 |

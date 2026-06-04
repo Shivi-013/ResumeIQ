@@ -135,7 +135,7 @@ def analyze_compare(resume_text: str, jd_text: str) -> dict:
 
 def _call_gemini(prompt: str, max_tokens: int = 8192) -> dict:
     try:
-        model = genai.GenerativeModel("gemini-3.5-flash")
+        model = genai.GenerativeModel("gemini-2.5-flash")
 
         response = model.generate_content(
             prompt,
