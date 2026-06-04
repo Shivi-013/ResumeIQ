@@ -1,0 +1,664 @@
+{% extends "base.html" %}
+{% block title %}Analysis Results — ResumeIQ{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+  <!-- ── Page Header ── -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
+    <div>
+      <h1 class="text-2xl sm:text-3xl font-bold mb-1">Analysis Results</h1>
+      <p class="text-gray-500 dark:text-gray-400 text-sm">AI-powered resume analysis powered by Google Gemini</p>
+    </div>
+    <div class="flex items-center gap-3 flex-wrap">
+      <a href="{{ url_for('report.download') }}"
+         class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-green-600 to-teal-600 text-white font-semibold text-sm shadow hover:shadow-lg transition-all hover:-translate-y-0.5">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+        Download Report
+      </a>
+      <a href="{{ url_for('compare.compare') }}"
+         class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 font-semibold text-sm hover:border-primary-500 hover:text-primary-600 dark:hover:text-primary-400 transition-all">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+        Compare Resumes
+      </a>
+      <a href="{{ url_for('analyzer.analyze') }}"
+         class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 font-semibold text-sm hover:border-primary-500 hover:text-primary-600 dark:hover:text-primary-400 transition-all">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+        New Analysis
+      </a>
+    </div>
+  </div>
+
+  <!-- Fallback warning -->
+  {% if analysis.get('_fallback') %}
+  <div class="mb-5 p-4 rounded-xl border border-yellow-300 dark:border-yellow-700 bg-yellow-50 dark:bg-yellow-950/50 text-yellow-800 dark:text-yellow-300 text-sm flex gap-3 items-start">
+    <svg class="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+    <p><strong>Limited mode:</strong> Gemini AI was unavailable. Results are keyword-based. Add <code class="font-mono bg-yellow-100 dark:bg-yellow-900 px-1 rounded">GEMINI_API_KEY</code> for full AI insights.</p>
+  </div>
+  {% endif %}
+
+  <!-- ── TAB NAV ── -->
+  <div class="sticky top-16 z-40 bg-slate-100 dark:bg-gray-950 pb-0 mb-6">
+    <div class="flex gap-0 overflow-x-auto no-scrollbar bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 p-1">
+      {% for tab_id, label, icon_path in [
+        ("tab-overview",    "Overview",         "M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"),
+        ("tab-insights",    "AI Insights",      "M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17H4a2 2 0 01-2-2V5a2 2 0 012-2h16a2 2 0 012 2v10a2 2 0 01-2 2h-1"),
+        ("tab-improvements","Improvements",     "M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"),
+        ("tab-company",     "Company Match",    "M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"),
+      ] %}
+      <button onclick="switchMainTab('{{ tab_id }}')" id="mtbtn-{{ tab_id }}"
+        class="main-tab-btn flex items-center gap-1.5 px-4 py-2 text-sm font-semibold whitespace-nowrap rounded-lg transition-all
+               {% if loop.first %}bg-primary-600 text-white shadow-sm
+               {% else %}text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800{% endif %}">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="{{ icon_path }}"/>
+        </svg>
+        {{ label }}
+      </button>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════ TAB: OVERVIEW -->
+  <div id="tab-overview" class="main-tab-panel space-y-6">
+
+    <!-- Score KPI cards -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+      {% set score_cards = [
+        ("Overall Match",  analysis.overall_score,   "from-blue-500 to-indigo-600",   "blue"),
+        ("ATS Score",      analysis.ats_score,        "from-green-500 to-teal-600",    "green"),
+        ("Skills Match",   analysis.skills_score,     "from-purple-500 to-violet-600", "purple"),
+        ("Experience",     analysis.experience_score, "from-orange-500 to-amber-600",  "orange"),
+        ("Education",      analysis.education_score,  "from-pink-500 to-rose-500",     "pink"),
+      ] %}
+      {% for label, score, gradient, tint in score_cards %}
+      <div class="score-card-v2 score-card-{{ tint }} rounded-2xl p-4 text-center" data-score="{{ score }}">
+        <p class="text-3xl font-extrabold mb-0.5 score-number">0<span class="text-base font-semibold">%</span></p>
+        <p class="text-xs font-semibold mt-1 opacity-80">{{ label }}</p>
+        <div class="mt-2 h-1.5 rounded-full bg-white/30 overflow-hidden">
+          <div class="progress-bar-fill h-full rounded-full bg-white/80" style="width:0%" data-target="{{ score }}"></div>
+        </div>
+      </div>
+      {% endfor %}
+      <!-- Semantic similarity -->
+      <div class="score-card-v2 score-card-teal rounded-2xl p-4 text-center">
+        {% if semantic_score is not none %}
+        <p class="text-3xl font-extrabold mb-0.5">{{ semantic_score }}<span class="text-base font-semibold">%</span></p>
+        {% else %}
+        <p class="text-3xl font-extrabold mb-0.5 opacity-50">N/A</p>
+        {% endif %}
+        <p class="text-xs font-semibold mt-1 opacity-80">Semantic Sim.</p>
+        <div class="mt-2 h-1.5 rounded-full bg-white/30 overflow-hidden">
+          {% if semantic_score is not none %}
+          <div class="progress-bar-fill h-full rounded-full bg-white/80"
+               style="width:0%" data-target="{{ semantic_score|int }}"></div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Recommendation banner -->
+    {% set rec = analysis.recommendation %}
+    <div class="card border-l-4 flex items-start gap-4
+      {% if rec == 'Strong Match' %}border-l-green-500
+      {% elif rec == 'Moderate Match' %}border-l-yellow-500
+      {% else %}border-l-red-500{% endif %}">
+      <div class="w-11 h-11 rounded-xl flex-shrink-0 flex items-center justify-center
+        {% if rec == 'Strong Match' %}bg-green-100 dark:bg-green-900/40
+        {% elif rec == 'Moderate Match' %}bg-yellow-100 dark:bg-yellow-900/40
+        {% else %}bg-red-100 dark:bg-red-900/40{% endif %}">
+        {% if rec == "Strong Match" %}
+        <svg class="w-6 h-6 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        {% elif rec == "Moderate Match" %}
+        <svg class="w-6 h-6 text-yellow-600 dark:text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M3 12a9 9 0 1118 0 9 9 0 01-18 0z"/></svg>
+        {% else %}
+        <svg class="w-6 h-6 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        {% endif %}
+      </div>
+      <div>
+        <p class="font-bold text-lg mb-1
+          {% if rec == 'Strong Match' %}text-green-700 dark:text-green-400
+          {% elif rec == 'Moderate Match' %}text-yellow-700 dark:text-yellow-400
+          {% else %}text-red-700 dark:text-red-400{% endif %}">{{ rec }}</p>
+        <p class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">{{ analysis.recommendation_reason }}</p>
+      </div>
+    </div>
+
+    <!-- Charts + Overall doughnut row -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <!-- Left: Overall doughnut + section bars -->
+      <div class="card">
+        <h3 class="section-heading mb-5">Overall Match</h3>
+        <div class="flex flex-col sm:flex-row items-center gap-6">
+          <div class="relative w-36 h-36 flex-shrink-0">
+            <canvas id="doughnutChart"></canvas>
+            <div class="absolute inset-0 flex flex-col items-center justify-center">
+              <span class="text-3xl font-extrabold">{{ analysis.overall_score }}</span>
+              <span class="text-sm text-gray-500">%</span>
+            </div>
+          </div>
+          <div class="flex-1 w-full space-y-3">
+            {% for section, data in analysis.sections.items() %}
+            <div>
+              <div class="flex justify-between text-sm mb-1">
+                <span class="font-semibold capitalize">{{ section }}</span>
+                <span class="font-bold
+                  {% if data.score >= 70 %}text-green-600 dark:text-green-400
+                  {% elif data.score >= 45 %}text-yellow-600 dark:text-yellow-500
+                  {% else %}text-red-500{% endif %}">{{ data.score }}%</span>
+              </div>
+              <div class="h-2 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
+                <div class="progress-bar-fill h-full rounded-full
+                  {% if data.score >= 70 %}bg-gradient-to-r from-green-400 to-green-600
+                  {% elif data.score >= 45 %}bg-gradient-to-r from-yellow-400 to-orange-500
+                  {% else %}bg-gradient-to-r from-red-400 to-red-600{% endif %}"
+                  style="width:0%" data-target="{{ data.score }}"></div>
+              </div>
+              <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5 leading-snug">{{ data.feedback }}</p>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Bar chart only -->
+      <div class="card">
+        <h3 class="section-heading mb-3">ATS Score Breakdown</h3>
+        <canvas id="barChart" height="200"></canvas>
+      </div>
+    </div>
+
+    <!-- Skills Analysis -->
+    <div class="card">
+      <h3 class="section-heading mb-5">Skills Analysis</h3>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+        <!-- Required -->
+        <div>
+          <div class="flex items-center gap-2 mb-3">
+            <span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
+            <p class="text-xs font-bold uppercase text-gray-500 dark:text-gray-400 tracking-wide">Required Skills ({{ analysis.required_skills|length }})</p>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            {% for s in analysis.required_skills %}
+            <span class="chip chip-neutral">{{ s }}</span>
+            {% else %}<span class="text-sm text-gray-400">None identified</span>{% endfor %}
+          </div>
+        </div>
+        <!-- Found -->
+        <div>
+          <div class="flex items-center gap-2 mb-3">
+            <span class="w-2.5 h-2.5 rounded-full bg-green-500"></span>
+            <p class="text-xs font-bold uppercase text-gray-500 dark:text-gray-400 tracking-wide">Found in Resume ({{ analysis.found_skills|length }})</p>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            {% for s in analysis.found_skills %}
+            <span class="chip chip-found">✓ {{ s }}</span>
+            {% else %}<span class="text-sm text-gray-400">None found</span>{% endfor %}
+          </div>
+        </div>
+        <!-- Missing -->
+        <div>
+          <div class="flex items-center gap-2 mb-3">
+            <span class="w-2.5 h-2.5 rounded-full bg-red-500"></span>
+            <p class="text-xs font-bold uppercase text-gray-500 dark:text-gray-400 tracking-wide">Missing Skills ({{ analysis.missing_skills|length }})</p>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            {% for s in analysis.missing_skills %}
+            <span class="chip chip-missing">✗ {{ s }}</span>
+            {% else %}<span class="text-sm text-green-600 font-semibold">All found 🎉</span>{% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Keyword Coverage bars -->
+    {% if keyword_coverage %}
+    <div class="card">
+      <h3 class="section-heading mb-4">Keyword Coverage</h3>
+      <div class="space-y-2.5">
+        {% for item in keyword_coverage %}
+        <div class="flex items-center gap-3">
+          <span class="w-32 text-sm font-medium truncate flex-shrink-0 text-gray-700 dark:text-gray-300">{{ item.skill }}</span>
+          <div class="flex-1 h-3 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
+            <div class="h-full rounded-full transition-all duration-700
+              {% if item.level == 'strong' %}kw-strong
+              {% elif item.level == 'medium' %}kw-medium
+              {% else %}kw-missing{% endif %}"
+              style="width: {{ item.bar_pct }}%"></div>
+          </div>
+          <span class="text-xs w-16 flex-shrink-0 text-right font-semibold
+            {% if item.level == 'strong' %}text-green-600 dark:text-green-400
+            {% elif item.level == 'medium' %}text-yellow-600 dark:text-yellow-400
+            {% else %}text-red-500{% endif %}">
+            {% if item.level == 'strong' %}Strong
+            {% elif item.level == 'medium' %}Medium
+            {% else %}Missing{% endif %}
+          </span>
+          <span class="text-xs text-gray-400 w-8 text-right">{{ item.count }}x</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- AI Feedback Report accordion -->
+    <div class="card">
+      <h3 class="section-heading mb-4">AI Feedback Report</h3>
+      {% for key, label, accent_cls, prefix in [
+        ("strengths",   "Strengths",   "accent-green",  "S"),
+        ("weaknesses",  "Weaknesses",  "accent-red",    "W"),
+        ("improvements","Improvements","accent-blue",   "I"),
+      ] %}
+      <div class="accordion-item border border-gray-200 dark:border-gray-700 rounded-xl mb-3 overflow-hidden">
+        <button onclick="toggleAccordion(this)"
+          class="accordion-trigger w-full flex items-center justify-between p-4 text-left font-semibold
+                 hover:bg-gray-50 dark:hover:bg-gray-800/60 transition-colors text-gray-800 dark:text-gray-100">
+          <span class="flex items-center gap-2.5">
+            <span class="accordion-badge {{ accent_cls }}">{{ prefix }}</span>
+            {{ label }}
+            <span class="text-xs text-gray-400 font-normal">({{ analysis.get(key, [])|length }})</span>
+          </span>
+          <svg class="w-4 h-4 text-gray-400 accordion-icon transition-transform flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+          </svg>
+        </button>
+        <div class="accordion-content">
+          <ul class="px-4 pb-4 space-y-2 border-t border-gray-100 dark:border-gray-700 pt-3">
+            {% for item in analysis.get(key, []) %}
+            <li class="flex gap-2 text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+              <span class="flex-shrink-0 mt-0.5 font-bold
+                {% if key == 'strengths' %}text-green-500{% elif key == 'weaknesses' %}text-red-500{% else %}text-blue-500{% endif %}">
+                {% if key == 'strengths' %}✓{% elif key == 'weaknesses' %}✗{% else %}→{% endif %}
+              </span>{{ item }}
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- Action Tips -->
+    <div class="card">
+      <h3 class="section-heading mb-4">Action Tips</h3>
+      <div class="flex gap-2 mb-4 flex-wrap">
+        {% for tid, tlabel in [("tip-keywords","Missing Keywords"),("tip-verbs","Action Verbs"),("tip-ats","ATS Tips"),("tip-format","Formatting")] %}
+        <button onclick="switchTip('{{ tid }}')" id="tipbtn-{{ tid }}"
+          class="tip-btn px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors
+                 {% if loop.first %}bg-primary-600 text-white{% else %}bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700{% endif %}">
+          {{ tlabel }}
+        </button>
+        {% endfor %}
+      </div>
+      <div id="tip-keywords" class="tip-panel">
+        <div class="flex flex-wrap gap-2">
+          {% for kw in analysis.missing_keywords %}
+          <span class="chip chip-missing">{{ kw }}</span>
+          {% else %}<p class="text-sm text-green-600 font-medium">No critical keywords missing!</p>{% endfor %}
+        </div>
+      </div>
+      <div id="tip-verbs" class="tip-panel hidden">
+        <div class="flex flex-wrap gap-2">
+          {% for v in analysis.action_verb_suggestions %}
+          <span class="chip chip-verb">{{ v }}</span>
+          {% endfor %}
+        </div>
+      </div>
+      <div id="tip-ats" class="tip-panel hidden">
+        <ul class="space-y-2">
+          {% for t in analysis.ats_tips %}
+          <li class="flex gap-2 text-sm text-gray-700 dark:text-gray-300"><span class="text-green-500 mt-0.5 flex-shrink-0 font-bold">✓</span>{{ t }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+      <div id="tip-format" class="tip-panel hidden">
+        <ul class="space-y-2">
+          {% for t in analysis.formatting_tips %}
+          <li class="flex gap-2 text-sm text-gray-700 dark:text-gray-300"><span class="text-blue-500 mt-0.5 flex-shrink-0 font-bold">→</span>{{ t }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+
+  </div><!-- /overview -->
+
+  <!-- ═══════════════════════════════════════════════════ TAB: AI INSIGHTS -->
+  <div id="tab-insights" class="main-tab-panel hidden space-y-6">
+
+    <!-- Interview Questions -->
+    <div class="card">
+      <div class="flex items-center gap-3 mb-5">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500 to-violet-600 flex items-center justify-center flex-shrink-0">
+          <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
+        </div>
+        <div>
+          <h3 class="font-bold text-lg">Personalized Interview Questions</h3>
+          <p class="text-xs text-gray-500 dark:text-gray-400">10 questions tailored to your resume and the job description</p>
+        </div>
+      </div>
+      {% set iq = analysis.get('interview_questions', {}) %}
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+        {% for q_key, q_label, q_grad in [
+          ("technical",     "Technical",      "from-blue-500 to-indigo-600"),
+          ("behavioral",    "Behavioral",     "from-green-500 to-teal-600"),
+          ("project_based", "Project-Based",  "from-orange-500 to-amber-600"),
+          ("scenario_based","Scenario-Based", "from-pink-500 to-rose-500"),
+        ] %}
+        {% set qs = iq.get(q_key, []) %}
+        {% if qs %}
+        <div class="rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+          <div class="bg-gradient-to-r {{ q_grad }} px-4 py-2.5">
+            <p class="text-white font-semibold text-sm">{{ q_label }}</p>
+          </div>
+          <ul class="divide-y divide-gray-100 dark:divide-gray-800">
+            {% for q in qs %}
+            <li class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300 flex gap-2">
+              <span class="text-primary-500 font-bold flex-shrink-0 mt-0.5">Q.</span>{{ q }}
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+        {% endif %}
+        {% endfor %}
+      </div>
+      {% if not iq or not any(iq.values()) %}
+      <p class="text-gray-400 text-sm">No interview questions generated. Add a valid Gemini API key for this feature.</p>
+      {% endif %}
+    </div>
+
+    <!-- Learning Roadmap -->
+    <div class="card">
+      <div class="flex items-center gap-3 mb-5">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-teal-500 to-cyan-600 flex items-center justify-center flex-shrink-0">
+          <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
+        </div>
+        <div>
+          <h3 class="font-bold text-lg">Learning Roadmap</h3>
+          <p class="text-xs text-gray-500 dark:text-gray-400">Personalized week-by-week plan to close your skill gaps</p>
+        </div>
+      </div>
+      {% set roadmap = analysis.get('learning_roadmap', []) %}
+      {% if roadmap %}
+      <div class="relative ml-4">
+        <div class="absolute left-3 top-2 bottom-4 w-0.5 bg-gradient-to-b from-teal-400 to-cyan-300 dark:from-teal-700 dark:to-cyan-800"></div>
+        <div class="space-y-5">
+          {% for item in roadmap %}
+          <div class="relative pl-10">
+            <div class="absolute left-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white shadow
+              {% if item.skill_category == 'Technical' %}bg-blue-500
+              {% elif item.skill_category == 'Soft' %}bg-green-500
+              {% else %}bg-purple-500{% endif %}">
+              {{ item.week }}
+            </div>
+            <div class="card py-3 px-4">
+              <div class="flex items-start justify-between gap-3">
+                <div>
+                  <p class="font-semibold text-sm text-gray-800 dark:text-gray-100">{{ item.topic }}</p>
+                  <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5 leading-relaxed">{{ item.description }}</p>
+                </div>
+                <span class="chip chip-neutral flex-shrink-0 text-xs">{{ item.skill_category }}</span>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% else %}
+      <p class="text-gray-400 text-sm">No roadmap generated. Add a valid Gemini API key for this feature.</p>
+      {% endif %}
+    </div>
+
+  </div><!-- /insights -->
+
+  <!-- ══════════════════════════════════════════════ TAB: IMPROVEMENTS -->
+  <div id="tab-improvements" class="main-tab-panel hidden space-y-6">
+
+    <!-- Section Audit -->
+    <div>
+      <h3 class="font-bold text-lg mb-4">Resume Section Audit</h3>
+      {% set section_audit = analysis.get('section_audit', {}) %}
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {% for sec_name, audit in section_audit.items() %}
+        <div class="card">
+          <h4 class="font-bold capitalize mb-3 text-primary-600 dark:text-primary-400">{{ sec_name }}</h4>
+          {% for action, color_cls, icon_char in [
+            ("keep",    "text-green-600 dark:text-green-400",  "✓"),
+            ("add",     "text-blue-600 dark:text-blue-400",    "+"),
+            ("improve", "text-yellow-600 dark:text-yellow-400","↑"),
+            ("remove",  "text-red-500",                        "✗"),
+          ] %}
+          {% set items = audit.get(action, []) %}
+          {% if items %}
+          <div class="mb-2">
+            <p class="text-xs font-bold uppercase {{ color_cls }} mb-1">{{ action }}</p>
+            {% for item in items %}
+            <p class="text-sm text-gray-700 dark:text-gray-300 flex gap-1.5 leading-relaxed">
+              <span class="{{ color_cls }} font-bold flex-shrink-0">{{ icon_char }}</span>{{ item }}
+            </p>
+            {% endfor %}
+          </div>
+          {% endif %}
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-gray-400 text-sm col-span-2">No section audit available. Add a valid Gemini API key for this feature.</p>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Bullet Rewrites -->
+    <div class="card">
+      <div class="flex items-center gap-3 mb-4">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center flex-shrink-0">
+          <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+        </div>
+        <div>
+          <h3 class="font-bold text-lg">AI-Rewritten Bullet Points</h3>
+          <p class="text-xs text-gray-500 dark:text-gray-400">Stronger bullets with quantified impact</p>
+        </div>
+      </div>
+      {% set rewrites = analysis.get('bullet_rewrites', []) %}
+      {% if rewrites %}
+      <div class="space-y-4">
+        {% for rw in rewrites %}
+        {% if rw.original and rw.improved %}
+        <div class="rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+          <div class="px-4 py-3 bg-red-50 dark:bg-red-950/30 border-b border-gray-200 dark:border-gray-700">
+            <p class="text-xs font-bold text-red-500 uppercase mb-1">Original</p>
+            <p class="text-sm text-gray-600 dark:text-gray-400 italic">{{ rw.original }}</p>
+          </div>
+          <div class="px-4 py-3 bg-green-50 dark:bg-green-950/30">
+            <p class="text-xs font-bold text-green-600 uppercase mb-1">Improved</p>
+            <p class="text-sm text-gray-800 dark:text-gray-100 font-medium">{{ rw.improved }}</p>
+          </div>
+        </div>
+        {% endif %}
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="text-gray-400 text-sm">No rewrites generated. Add a valid Gemini API key for this feature.</p>
+      {% endif %}
+    </div>
+
+  </div><!-- /improvements -->
+
+  <!-- ════════════════════════════════════════════════ TAB: COMPANY MATCH -->
+  <div id="tab-company" class="main-tab-panel hidden">
+    <div class="card">
+      <div class="flex items-center gap-3 mb-5">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-gray-700 to-gray-900 flex items-center justify-center flex-shrink-0">
+          <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+        </div>
+        <div>
+          <h3 class="font-bold text-lg">Company-Specific Analysis</h3>
+          <p class="text-xs text-gray-500 dark:text-gray-400">Evaluate your resume against a specific company's hiring bar</p>
+        </div>
+      </div>
+      <div class="flex flex-col sm:flex-row gap-3 mb-5">
+        <select id="companySelect"
+          class="flex-1 px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800
+                 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-colors text-sm">
+          <option value="">Select a company…</option>
+          <option value="Google">🔵 Google</option>
+          <option value="Amazon">🟠 Amazon</option>
+          <option value="Microsoft">🟦 Microsoft</option>
+          <option value="Netflix">🔴 Netflix</option>
+          <option value="Meta">🔵 Meta</option>
+        </select>
+        <button onclick="runCompanyAnalysis()"
+          class="btn-primary px-6 py-2.5 rounded-xl text-white font-semibold text-sm inline-flex items-center gap-2">
+          <span id="companyBtnText">Analyze</span>
+          <svg id="companySpinner" class="w-4 h-4 animate-spin hidden" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+          </svg>
+        </button>
+      </div>
+      <div id="companyResult" class="hidden">
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-5">
+          <div class="card text-center"><p id="cmpScore" class="text-3xl font-extrabold text-primary-600 dark:text-primary-400">--</p><p class="text-xs text-gray-500 mt-1">Company Match</p></div>
+          <div class="card text-center"><p id="cmpLikelihood" class="text-2xl font-extrabold">--</p><p class="text-xs text-gray-500 mt-1">Hiring Likelihood</p></div>
+          <div class="card text-center col-span-2 sm:col-span-1"><p id="cmpMissing" class="text-2xl font-extrabold text-red-500">--</p><p class="text-xs text-gray-500 mt-1">Traits Missing</p></div>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+          <div><p class="text-xs font-bold uppercase text-green-600 mb-2">Traits Present</p><div id="cmpPresent" class="flex flex-wrap gap-2"></div></div>
+          <div><p class="text-xs font-bold uppercase text-red-500 mb-2">Traits Missing</p><div id="cmpMissingTraits" class="flex flex-wrap gap-2"></div></div>
+        </div>
+        <div><p class="text-xs font-bold uppercase text-gray-500 mb-2">Specific Feedback</p><ul id="cmpFeedback" class="space-y-2"></ul></div>
+        <div class="mt-4 p-3 rounded-lg bg-gray-100 dark:bg-gray-800"><p id="cmpRecommendation" class="text-sm text-gray-700 dark:text-gray-300"></p></div>
+      </div>
+      <div id="companyError" class="hidden p-4 rounded-xl bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-300 text-sm"></div>
+    </div>
+  </div><!-- /company -->
+
+  <!-- Bottom CTA -->
+  <div class="text-center py-6">
+    <a href="{{ url_for('analyzer.analyze') }}"
+       class="btn-primary inline-flex items-center gap-2 px-8 py-3 rounded-xl text-white font-semibold">
+      <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+      Analyze Another Resume
+    </a>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+<script>
+const analysisData = {
+  overall:    {{ analysis.overall_score }},
+  ats:        {{ analysis.ats_score }},
+  skills:     {{ analysis.skills_score }},
+  experience: {{ analysis.experience_score }},
+  education:  {{ analysis.education_score }},
+  found:      {{ analysis.found_skills|length }},
+  missing:    {{ analysis.missing_skills|length }},
+  sections: {
+    skills:     {{ analysis.sections.skills.score }},
+    experience: {{ analysis.sections.experience.score }},
+    education:  {{ analysis.sections.education.score }},
+    projects:   {{ analysis.sections.projects.score }},
+  }
+};
+
+// ── Animated score cards ──
+document.querySelectorAll('[data-score]').forEach(card => {
+  const target = parseInt(card.dataset.score, 10);
+  const numEl  = card.querySelector('.score-number');
+  const barEl  = card.querySelector('.progress-bar-fill');
+  if (!numEl) return;
+  let current = 0;
+  const step  = Math.max(1, Math.floor(target / 40));
+  const timer = setInterval(() => {
+    current = Math.min(current + step, target);
+    numEl.innerHTML = `${current}<span class="text-base font-semibold">%</span>`;
+    if (current >= target) clearInterval(timer);
+  }, 30);
+  if (barEl) setTimeout(() => { barEl.style.width = target + '%'; }, 100);
+});
+// Section breakdown bars (no data-score on parent)
+document.querySelectorAll('[data-target]').forEach(el => {
+  if (el.closest('[data-score]')) return;
+  setTimeout(() => { el.style.width = el.dataset.target + '%'; }, 500);
+});
+
+// ── Tab switching ──
+function switchMainTab(id) {
+  document.querySelectorAll('.main-tab-panel').forEach(p => p.classList.add('hidden'));
+  document.querySelectorAll('.main-tab-btn').forEach(b => {
+    b.classList.remove('bg-primary-600','text-white','shadow-sm');
+    b.classList.add('text-gray-500','dark:text-gray-400');
+  });
+  document.getElementById(id).classList.remove('hidden');
+  const btn = document.getElementById('mtbtn-' + id);
+  btn.classList.add('bg-primary-600','text-white','shadow-sm');
+  btn.classList.remove('text-gray-500','dark:text-gray-400');
+  if (id === 'tab-overview') { _chartsInitialized = false; initCharts(analysisData); }
+}
+
+// ── Accordion ──
+function toggleAccordion(btn) {
+  const content = btn.nextElementSibling;
+  const icon    = btn.querySelector('.accordion-icon');
+  const isOpen  = content.classList.contains('open');
+  document.querySelectorAll('.accordion-content').forEach(c => c.classList.remove('open'));
+  document.querySelectorAll('.accordion-icon').forEach(i => i.style.transform = '');
+  if (!isOpen) { content.classList.add('open'); icon.style.transform = 'rotate(180deg)'; }
+}
+
+// ── Tip tabs ──
+function switchTip(id) {
+  document.querySelectorAll('.tip-panel').forEach(p => p.classList.add('hidden'));
+  document.querySelectorAll('.tip-btn').forEach(b => {
+    b.classList.remove('bg-primary-600','text-white');
+    b.classList.add('bg-gray-100','dark:bg-gray-800','text-gray-600','dark:text-gray-300');
+  });
+  document.getElementById(id).classList.remove('hidden');
+  const btn = document.getElementById('tipbtn-' + id);
+  btn.classList.add('bg-primary-600','text-white');
+  btn.classList.remove('bg-gray-100','dark:bg-gray-800','text-gray-600','dark:text-gray-300');
+}
+
+// ── Company analysis AJAX ──
+async function runCompanyAnalysis() {
+  const company = document.getElementById('companySelect').value;
+  if (!company) { alert('Please select a company first.'); return; }
+  const btn = document.getElementById('companyBtnText');
+  const spin = document.getElementById('companySpinner');
+  const result = document.getElementById('companyResult');
+  const errDiv = document.getElementById('companyError');
+  btn.textContent = 'Analyzing…'; spin.classList.remove('hidden');
+  result.classList.add('hidden'); errDiv.classList.add('hidden');
+  try {
+    const res  = await fetch('/company-analyze', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({company}) });
+    const data = await res.json();
+    if (!res.ok || data.error) { errDiv.textContent = data.error || 'Analysis failed.'; errDiv.classList.remove('hidden'); return; }
+    document.getElementById('cmpScore').textContent = data.company_match_score + '%';
+    document.getElementById('cmpMissing').textContent = (data.traits_missing || []).length;
+    const hl = data.hiring_likelihood || 'Medium';
+    const hlEl = document.getElementById('cmpLikelihood');
+    hlEl.textContent = hl;
+    hlEl.className = 'text-2xl font-extrabold ' + (hl === 'High' ? 'text-green-600' : hl === 'Low' ? 'text-red-500' : 'text-yellow-600');
+    document.getElementById('cmpPresent').innerHTML = (data.traits_present||[]).map(t=>`<span class="chip chip-found">${t}</span>`).join('');
+    document.getElementById('cmpMissingTraits').innerHTML = (data.traits_missing||[]).map(t=>`<span class="chip chip-missing">${t}</span>`).join('');
+    document.getElementById('cmpFeedback').innerHTML = (data.specific_feedback||[]).map(f=>`<li class="flex gap-2 text-sm text-gray-700 dark:text-gray-300"><span class="text-blue-500 flex-shrink-0">→</span>${f}</li>`).join('');
+    document.getElementById('cmpRecommendation').textContent = data.recommendation || '';
+    result.classList.remove('hidden');
+  } catch(e) { errDiv.textContent = 'Network error. Please try again.'; errDiv.classList.remove('hidden'); }
+  finally { btn.textContent = 'Analyze'; spin.classList.add('hidden'); }
+}
+
+// ── Init on load ──
+document.addEventListener('DOMContentLoaded', () => {
+  initCharts(analysisData);
+  // Open first accordion
+  const first = document.querySelector('.accordion-content');
+  if (first) {
+    first.classList.add('open');
+    const icon = first.previousElementSibling.querySelector('.accordion-icon');
+    if (icon) icon.style.transform = 'rotate(180deg)';
+  }
+});
+</script>
+{% endblock %}

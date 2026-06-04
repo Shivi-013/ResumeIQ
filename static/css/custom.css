@@ -1,0 +1,175 @@
+/* ── Gradients ── */
+.hero-gradient {
+  background: linear-gradient(135deg, #eff6ff 0%, #f5f3ff 50%, #fdf2f8 100%);
+}
+.dark .hero-gradient {
+  background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #1a0b2e 100%);
+}
+.cta-gradient {
+  background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+}
+.gradient-text {
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Buttons ── */
+.btn-primary {
+  background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+  box-shadow: 0 4px 20px rgba(99, 102, 241, 0.35);
+}
+.btn-primary:hover {
+  background: linear-gradient(135deg, #1d4ed8 0%, #6d28d9 100%);
+  box-shadow: 0 6px 28px rgba(99, 102, 241, 0.5);
+  transform: translateY(-1px);
+}
+.btn-primary:active { transform: translateY(0); }
+
+/* ── Cards — light blue gradient in light mode ── */
+.card {
+  background: linear-gradient(135deg, #eff6ff 0%, #e0f2fe 100%);
+  border: 1px solid #bfdbfe;
+  border-radius: 1rem;
+  padding: 1.25rem;
+  box-shadow: 0 2px 12px rgba(59,130,246,.10), 0 1px 3px rgba(59,130,246,.06);
+}
+.dark .card {
+  background: #1e293b;
+  border-color: #334155;
+  box-shadow: none;
+}
+
+/* ── Section heading ── */
+.section-heading {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1e293b;
+  letter-spacing: -.01em;
+}
+.dark .section-heading { color: #f1f5f9; }
+
+/* ── Score cards V2 — colored gradient tiles ── */
+.score-card-v2 {
+  color: white;
+  box-shadow: 0 4px 16px rgba(0,0,0,.15);
+}
+.score-card-blue    { background: linear-gradient(135deg, #3b82f6, #4f46e5); }
+.score-card-green   { background: linear-gradient(135deg, #22c55e, #0d9488); }
+.score-card-purple  { background: linear-gradient(135deg, #a855f7, #7c3aed); }
+.score-card-orange  { background: linear-gradient(135deg, #f97316, #d97706); }
+.score-card-pink    { background: linear-gradient(135deg, #ec4899, #e11d48); }
+.score-card-teal    { background: linear-gradient(135deg, #14b8a6, #0891b2); }
+
+/* ── Step badge ── */
+.step-badge {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #2563eb, #7c3aed);
+  color: white;
+  font-size: .8rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* ── Progress bars ── */
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 9999px;
+  transition: width 1.2s cubic-bezier(.4,0,.2,1);
+}
+
+/* ── Keyword coverage levels ── */
+.kw-strong  { background: linear-gradient(90deg, #22c55e, #16a34a); }
+.kw-medium  { background: linear-gradient(90deg, #f59e0b, #d97706); }
+.kw-missing { background: #cbd5e1; }
+.dark .kw-missing { background: #334155; }
+
+/* ── Skill chips ── */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  padding: .2rem .65rem;
+  border-radius: 9999px;
+  font-size: .72rem;
+  font-weight: 600;
+  letter-spacing: .01em;
+}
+.chip-found   { background:#dcfce7; color:#166534; border: 1px solid #bbf7d0; }
+.chip-missing { background:#fee2e2; color:#991b1b; border: 1px solid #fecaca; }
+.chip-neutral { background:#f1f5f9; color:#475569; border: 1px solid #e2e8f0; }
+.chip-verb    { background:#ede9fe; color:#5b21b6; border: 1px solid #ddd6fe; }
+.dark .chip-found   { background:#14532d; color:#86efac; border-color:#166534; }
+.dark .chip-missing { background:#450a0a; color:#fca5a5; border-color:#7f1d1d; }
+.dark .chip-neutral { background:#1e293b; color:#94a3b8; border-color:#334155; }
+.dark .chip-verb    { background:#2e1065; color:#c4b5fd; border-color:#4c1d95; }
+
+/* ── Accordion ── */
+.accordion-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height .4s ease;
+}
+.accordion-content.open { max-height: 800px; }
+
+/* ── Accordion badge ── */
+.accordion-badge {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  font-size: .7rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.accent-green { background: #dcfce7; color: #16a34a; }
+.accent-red   { background: #fee2e2; color: #dc2626; }
+.accent-blue  { background: #dbeafe; color: #2563eb; }
+.dark .accent-green { background: #14532d; color: #86efac; }
+.dark .accent-red   { background: #450a0a; color: #fca5a5; }
+.dark .accent-blue  { background: #1e3a8a; color: #93c5fd; }
+
+/* ── Drop zone hover ── */
+.drop-over {
+  border-color: #3b82f6 !important;
+  background: #eff6ff;
+}
+.dark .drop-over { background: #1e3a5f; }
+
+/* ── Recommendation border styles ── */
+.border-l-green-500 { border-left-color: #22c55e; }
+.border-l-yellow-500{ border-left-color: #eab308; }
+.border-l-red-500   { border-left-color: #ef4444; }
+
+/* ── No scrollbar ── */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* ── Skeleton loader ── */
+.skeleton {
+  background: linear-gradient(90deg, #e2e8f0 25%, #cbd5e1 50%, #e2e8f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: .5rem;
+}
+.dark .skeleton {
+  background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
+  background-size: 200% 100%;
+}
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ── Animations ── */
+@keyframes fadeIn  { from { opacity: 0; }                          to { opacity: 1; } }
+@keyframes slideUp { from { transform:translateY(24px); opacity:0; } to { transform:translateY(0); opacity:1; } }
+.animate-fade-in  { animation: fadeIn  .4s ease-in-out; }
+.animate-slide-up { animation: slideUp .5s ease-out; }
